@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python -c \"import pptx, docx; print\\('ok'\\)\")",
+      "Bash(.venv/Scripts/python.exe -c \"import pptx, docx; print\\('venv ok'\\)\")",
+      "Bash(python -)"
+    ]
+  }
+}

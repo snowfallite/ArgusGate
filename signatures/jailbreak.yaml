@@ -1,0 +1,105 @@
+signatures:
+  - id: sig_jb_001
+    name: dan_jailbreak
+    pattern: "(?i)\\bDAN\\b.{0,50}(do\\s+anything\\s+now|no\\s+restrictions?|unrestricted)"
+    severity: critical
+    category: jailbreak
+    pattern_type: regex
+
+  - id: sig_jb_002
+    name: developer_mode
+    pattern: "(?i)(enable|activate|turn\\s+on)\\s+developer\\s+mode"
+    severity: critical
+    category: jailbreak
+    pattern_type: regex
+
+  - id: sig_jb_003
+    name: opposite_day
+    pattern: "(?i)(today\\s+is|it'?s)\\s+opposite\\s+day"
+    severity: high
+    category: jailbreak
+    pattern_type: regex
+
+  - id: sig_jb_004
+    name: jailbreak_keyword
+    pattern: "jailbreak"
+    severity: high
+    category: jailbreak
+    pattern_type: keyword
+
+  - id: sig_jb_005
+    name: do_anything_now
+    pattern: "do anything now"
+    severity: critical
+    category: jailbreak
+    pattern_type: keyword
+
+  - id: sig_jb_006
+    name: no_restrictions_roleplay
+    pattern: "(?i)(roleplay|role-play|role\\s+play)\\s+as\\s+.{0,40}(no\\s+restrictions?|unrestricted|anything)"
+    severity: high
+    category: jailbreak
+    pattern_type: regex
+
+  - id: sig_jb_007
+    name: stan_jailbreak
+    pattern: "(?i)\\bSTAN\\b.{0,30}(strive|to\\s+avoid|norms)"
+    severity: high
+    category: jailbreak
+    pattern_type: regex
+
+  - id: sig_jb_008
+    name: grandma_exploit
+    pattern: "(?i)(my\\s+)?grandma\\s+(used\\s+to|would).{0,60}(tell|explain|describe|show)"
+    severity: medium
+    category: jailbreak
+    pattern_type: regex
+
+  - id: sig_jb_009
+    name: fictional_framing_harmful
+    pattern: "(?i)(in\\s+a\\s+story|fictional(ly)?|hypothetically|imagine\\s+that|let'?s\\s+say).{0,80}(bomb|weapon|poison|hack|malware|exploit)"
+    severity: high
+    category: jailbreak
+    pattern_type: regex
+
+  - id: sig_jb_010
+    name: evil_twin_persona
+    pattern: "(?i)(evil|dark|unrestricted|jailbroken|unfiltered)\\s+(version|mode|twin|ai|assistant)\\s+of\\s+(yourself|you|chatgpt|claude|gpt)"
+    severity: critical
+    category: jailbreak
+    pattern_type: regex
+
+  - id: sig_jb_011
+    name: always_intelligent_answer
+    pattern: "(?i)\\bAIM\\b.{0,30}(always\\s+intelligent|machiavellian)"
+    severity: high
+    category: jailbreak
+    pattern_type: regex
+
+  - id: sig_jb_012
+    name: keyword_no_ethical
+    pattern: "no ethical guidelines"
+    severity: high
+    category: jailbreak
+    pattern_type: keyword
+
+  - id: sig_jb_013
+    name: keyword_uncensored_mode
+    pattern: "uncensored mode"
+    severity: critical
+    category: jailbreak
+    pattern_type: keyword
+
+  - id: sig_jb_014
+    name: base_prompt_leak
+    pattern: "(?i)(what\\s+(are|were|is)\\s+your\\s+(original|initial|base|first)\\s+(instructions?|prompt|directives?))"
+    severity: high
+    category: prompt_injection
+    pattern_type: regex
+
+  - id: sig_jb_015
+    name: token_smuggling
+    pattern: "(?i)(token\\s+smuggling|prompt\\s+injection\\s+via|hidden\\s+instruction)"
+    severity: critical
+    category: jailbreak
+    pattern_type: regex

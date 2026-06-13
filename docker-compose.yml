@@ -1,0 +1,143 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - argus_net
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    command: >
+      redis-server
+      --save 60 1
+      --loglevel warning
+      --maxmemory 512mb
+      --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    networks:
+      - argus_net
+    restart: unless-stopped
+
+  qdrant:
+    image: qdrant/qdrant:v1.13.1
+    volumes:
+      - qdrant_data:/qdrant/storage
+    environment:
+      QDRANT__TELEMETRY_DISABLED: "true"
+    ports:
+      - "6333:6333"
+    networks:
+      - argus_net
+    restart: unless-stopped
+
+  gateway:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      args:
+        # CPU torch по умолчанию. Для GPU собрать так:
+        # docker compose build --build-arg TORCH_INDEX=https://download.pytorch.org/whl/cu121 gateway
+        TORCH_INDEX: ${TORCH_INDEX:-https://download.pytorch.org/whl/cpu}
+    env_file: .env
+    # HF_HUB_OFFLINE и TRANSFORMERS_OFFLINE заданы через ENV в Dockerfile — не дублируем здесь.
+    volumes:
+      - ./signatures:/app/signatures:ro
+      - ./models:/app/models:rw
+      - ./data:/app/data:ro
+      - hf_models:/opt/hf_models   # HuggingFace model cache (populate via model-downloader)
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      qdrant:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+    networks:
+      - argus_net
+    restart: unless-stopped
+    # GPU passthrough: подхватывается автоматически если установлен NVIDIA Container Toolkit.
+    # На хостах без NVIDIA — Docker игнорирует резервацию с предупреждением, контейнер
+    # стартует на CPU. Образ при этом должен быть собран с CUDA torch (см. args.TORCH_INDEX).
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+
+  frontend:
+    build:
+      context: ./front
+      dockerfile: Dockerfile
+    ports:
+      - "3000:80"
+    depends_on:
+      gateway:
+        condition: service_healthy
+    networks:
+      - argus_net
+    restart: unless-stopped
+
+  # ── Однократная загрузка моделей в named volume // Команда:  docker compose --profile setup run --rm model-downloader
+  # Запускать вручную перед первым стартом стека:
+  #   docker compose --profile setup run --rm model-downloader
+  # Нужен HF_TOKEN в .env (или в окружении).
+  # После завершения volume hf_models остаётся — модели не нужно скачивать снова.
+  model-downloader:
+    image: python:3.12-slim
+    environment:
+      HF_HOME: /opt/hf_models
+      HF_TOKEN: ${HF_TOKEN:-}
+      # Подавляем warning "Running pip as root" при установке uv
+      PIP_ROOT_USER_ACTION: ignore
+    volumes:
+      - hf_models:/opt/hf_models
+      - ./scripts/download_models.py:/download_models.py:ro
+    command:
+      - bash
+      - -c
+      - |
+        set -e
+        pip install -q uv
+        uv venv /opt/dl-venv --quiet
+        uv pip install --python /opt/dl-venv/bin/python -q 'huggingface-hub>=0.26.0'
+        /opt/dl-venv/bin/python /download_models.py
+    profiles: ["setup"]
+    networks:
+      - argus_net
+
+volumes:
+  postgres_data:
+  redis_data:
+  qdrant_data:
+  hf_models:        # Персистентный кеш HuggingFace моделей
+
+networks:
+  argus_net:
+    driver: bridge

@@ -1,0 +1,36 @@
+*.env
+.env
+models/*.bin
+models/*.onnx
+models/deberta_onnx/
+models/adapter_*/
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+.coverage
+htmlcov/
+dist/
+*.egg-info/
+node_modules/
+front/dist/
+
+# Virtual environments (явно, для надёжности)
+.venv/
+**/.venv/
+
+# Крупные авто-загружаемые модели (HF-кеш; ставится model-downloader'ом)
+models/sentence_transformers/
+
+# Личные материалы диплома (хранятся локально, не публикуются)
+*.docx
+*.pptx
+DEMO.md
+защита_речь_и_слайды.md
+защита_речь_и_слайды_v2.md
+
+# Editors / OS
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db

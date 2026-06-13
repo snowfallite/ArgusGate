@@ -1,0 +1,105 @@
+signatures:
+  - id: sig_pi_001
+    name: ignore_previous_instructions
+    pattern: "(?i)ignore\\s+(all\\s+)?(previous|prior|above|earlier)\\s+(instructions?|prompts?|rules?|directives?|commands?)"
+    severity: high
+    category: prompt_injection
+    pattern_type: regex
+
+  - id: sig_pi_002
+    name: disregard_directions
+    pattern: "(?i)disregard\\s+(all\\s+)?(previous\\s+)?(directions?|instructions?|constraints?|rules?)"
+    severity: high
+    category: prompt_injection
+    pattern_type: regex
+
+  - id: sig_pi_003
+    name: new_instructions_override
+    pattern: "(?i)(new|updated?|revised?)\\s+instructions?\\s*[:.]"
+    severity: high
+    category: prompt_injection
+    pattern_type: regex
+
+  - id: sig_pi_004
+    name: system_prompt_reveal
+    pattern: "(?i)(reveal|show|print|output|repeat|display|tell me)\\s+(your\\s+)?(system\\s+prompt|system\\s+message|initial\\s+instructions?|original\\s+instructions?)"
+    severity: critical
+    category: prompt_injection
+    pattern_type: regex
+
+  - id: sig_pi_005
+    name: forget_previous
+    pattern: "(?i)(forget|discard|erase|clear|wipe)\\s+(everything|all|any)?\\s*(you|previously)\\s*(know|learned|were\\s+told|have\\s+been)"
+    severity: high
+    category: prompt_injection
+    pattern_type: regex
+
+  - id: sig_pi_006
+    name: override_safety
+    pattern: "(?i)(override|bypass|circumvent|disable|turn\\s+off)\\s+(your\\s+)?(safety|content\\s+filter|restrictions?|guidelines?|policies?|rules?)"
+    severity: critical
+    category: prompt_injection
+    pattern_type: regex
+
+  - id: sig_pi_007
+    name: act_as_unrestricted
+    pattern: "(?i)(act|behave|pretend|respond)\\s+as\\s+(if\\s+you\\s+(are|have|were))?.{0,30}(no\\s+restrictions?|no\\s+limits?|unrestricted|no\\s+filter|uncensored)"
+    severity: high
+    category: prompt_injection
+    pattern_type: regex
+
+  - id: sig_pi_008
+    name: you_are_now
+    pattern: "(?i)you\\s+are\\s+now\\s+(a|an)?\\s*(?!helpful|an\\s+AI|a\\s+language).{3,50}(without\\s+(restrictions?|limits?|guidelines?)|that\\s+(can|will)\\s+(do|say|provide)\\s+anything)"
+    severity: high
+    category: prompt_injection
+    pattern_type: regex
+
+  - id: sig_pi_009
+    name: translate_attack_injection
+    pattern: "(?i)(translate|transliterate)\\s+the\\s+following\\s+(to|into|from)\\s+\\w+\\s*:\\s*ignore"
+    severity: high
+    category: prompt_injection
+    pattern_type: regex
+
+  - id: sig_pi_010
+    name: pretend_no_guidelines
+    pattern: "(?i)pretend\\s+(that\\s+)?(you\\s+)?(don'?t|do\\s+not)\\s+have\\s+(any\\s+)?(guidelines?|restrictions?|rules?|policies?)"
+    severity: high
+    category: prompt_injection
+    pattern_type: regex
+
+  - id: sig_pi_011
+    name: keyword_ignore_instructions
+    pattern: "ignore instructions"
+    severity: high
+    category: prompt_injection
+    pattern_type: keyword
+
+  - id: sig_pi_012
+    name: keyword_override_system
+    pattern: "override system"
+    severity: high
+    category: prompt_injection
+    pattern_type: keyword
+
+  - id: sig_pi_013
+    name: keyword_bypass_filter
+    pattern: "bypass filter"
+    severity: high
+    category: prompt_injection
+    pattern_type: keyword
+
+  - id: sig_pi_014
+    name: keyword_system_prompt_leaked
+    pattern: "system prompt:"
+    severity: critical
+    category: prompt_injection
+    pattern_type: keyword
+
+  - id: sig_pi_015
+    name: prompt_injection_separator
+    pattern: "(?i)(---+|===+|<<<|>>>)\\s*(system|admin|instructions?)\\s*(---+|===+|>>>|<<<)"
+    severity: high
+    category: prompt_injection
+    pattern_type: regex

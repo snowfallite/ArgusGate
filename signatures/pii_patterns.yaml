@@ -1,0 +1,70 @@
+signatures:
+  - id: sig_pii_001
+    name: credit_card_number
+    pattern: "\\b(?:4[0-9]{12}(?:[0-9]{3})?|5[1-5][0-9]{14}|3[47][0-9]{13}|6(?:011|5[0-9]{2})[0-9]{12})\\b"
+    severity: critical
+    category: pii
+    pattern_type: regex
+
+  - id: sig_pii_002
+    name: russian_inn_individual
+    pattern: "\\b[0-9]{12}\\b"
+    severity: medium
+    category: pii
+    pattern_type: regex
+
+  - id: sig_pii_003
+    name: russian_passport
+    pattern: "\\b[0-9]{2}\\s?[0-9]{2}\\s?[0-9]{6}\\b"
+    severity: high
+    category: pii
+    pattern_type: regex
+
+  - id: sig_pii_004
+    name: api_key_openai
+    pattern: "\\bsk-[A-Za-z0-9]{20,}\\b"
+    severity: critical
+    category: secret_leak
+    pattern_type: regex
+
+  - id: sig_pii_005
+    name: api_key_anthropic
+    pattern: "\\bsk-ant-[A-Za-z0-9\\-]{20,}\\b"
+    severity: critical
+    category: secret_leak
+    pattern_type: regex
+
+  - id: sig_pii_006
+    name: bearer_token
+    pattern: "(?i)bearer\\s+[A-Za-z0-9\\-._~+/]{20,}"
+    severity: critical
+    category: secret_leak
+    pattern_type: regex
+
+  - id: sig_pii_007
+    name: aws_access_key
+    pattern: "\\b(AKIA|AIPA|AIDA|AROA|AIKA|AILA|AIOA)[A-Z0-9]{16}\\b"
+    severity: critical
+    category: secret_leak
+    pattern_type: regex
+
+  - id: sig_pii_008
+    name: private_key_header
+    pattern: "-----BEGIN (RSA |EC )?PRIVATE KEY-----"
+    severity: critical
+    category: secret_leak
+    pattern_type: regex
+
+  - id: sig_pii_009
+    name: phone_ru
+    pattern: "(?:\\+7|8)[\\s\\-]?\\(?[0-9]{3}\\)?[\\s\\-]?[0-9]{3}[\\s\\-]?[0-9]{2}[\\s\\-]?[0-9]{2}"
+    severity: medium
+    category: pii
+    pattern_type: regex
+
+  - id: sig_pii_010
+    name: email_address
+    pattern: "[a-zA-Z0-9._%+\\-]+@[a-zA-Z0-9.\\-]+\\.[a-zA-Z]{2,}"
+    severity: low
+    category: pii
+    pattern_type: regex
