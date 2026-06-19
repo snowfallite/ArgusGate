@@ -46,7 +46,10 @@ def _cuda_available() -> bool:
         if not torch.cuda.is_available():
             _cuda_probe = False
         else:
-            torch.zeros(1).cuda()
+            # .cuda() alone is a memcpy and won't surface "no kernel image".
+            # Run a real compute kernel and synchronize to force async errors.
+            (torch.zeros(1, device="cuda") + 1).cpu()
+            torch.cuda.synchronize()
             _cuda_probe = True
     except Exception:
         _cuda_probe = False  # ponytail: arch mismatch / no GPU → CPU, never retried
