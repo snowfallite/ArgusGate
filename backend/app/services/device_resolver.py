@@ -28,15 +28,29 @@ class ResolvedDevice(NamedTuple):
     cuda_available: bool
 
 
+_cuda_probe: bool | None = None
+
+
 def _cuda_available() -> bool:
+    # is_available() is necessary but not sufficient: on an arch-mismatched build
+    # (e.g. sm_120 RTX 5060 on a cu121 wheel) the runtime initializes and
+    # is_available() returns True, but the first real kernel launch dies with
+    # "no kernel image is available". So we force a trivial kernel launch.
+    # Cached: the probe launches a kernel, GPU arch can't change at runtime, and
+    # a failed launch can poison the CUDA context — probe exactly once.
+    global _cuda_probe
+    if _cuda_probe is not None:
+        return _cuda_probe
     try:
         import torch  # type: ignore
+        if not torch.cuda.is_available():
+            _cuda_probe = False
+        else:
+            torch.zeros(1).cuda()
+            _cuda_probe = True
     except Exception:
-        return False
-    try:
-        return bool(torch.cuda.is_available())
-    except Exception:
-        return False
+        _cuda_probe = False  # ponytail: arch mismatch / no GPU → CPU, never retried
+    return _cuda_probe
 
 
 def detect_cuda() -> dict:

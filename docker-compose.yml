@@ -53,7 +53,8 @@ services:
       dockerfile: Dockerfile
       args:
         # CPU torch по умолчанию. Для GPU собрать так:
-        # docker compose build --build-arg TORCH_INDEX=https://download.pytorch.org/whl/cu121 gateway
+        # docker compose build --build-arg TORCH_INDEX=https://download.pytorch.org/whl/cu128 gateway
+        # (cu128 = CUDA 12.8 / torch 2.7+, нужно для Blackwell-карт RTX 50xx, sm_120)
         TORCH_INDEX: ${TORCH_INDEX:-https://download.pytorch.org/whl/cpu}
     env_file: .env
     # HF_HUB_OFFLINE и TRANSFORMERS_OFFLINE заданы через ENV в Dockerfile — не дублируем здесь.

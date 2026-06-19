@@ -16,6 +16,7 @@ from qdrant_client.models import Distance, PointStruct, VectorParams
 from sentence_transformers import SentenceTransformer
 
 from app.config import settings
+from app.services.device_resolver import resolve as resolve_device
 
 DATA_DIR = Path(settings.data_dir)
 MODEL_NAME = "sentence-transformers/all-MiniLM-L6-v2"
@@ -83,7 +84,7 @@ async def main() -> None:
 
     # 3. Load embedding model
     print(f"Loading model '{MODEL_NAME}'…")
-    model = SentenceTransformer(MODEL_NAME)
+    model = SentenceTransformer(MODEL_NAME, device=resolve_device("auto").device)
 
     # 4. Embed + upsert in batches
     now = datetime.now(timezone.utc).isoformat()

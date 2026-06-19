@@ -7,6 +7,7 @@ from qdrant_client import AsyncQdrantClient
 from sentence_transformers import SentenceTransformer
 
 from ..config import Settings
+from ..services.device_resolver import resolve as resolve_device
 from ..services.hf_local import resolve_model_path
 from .base import BaseDetector
 from .context import DetectionResult, RequestContext
@@ -31,9 +32,10 @@ class VectorSimilarityLayer(BaseDetector):
     async def warm_up(self) -> None:
         try:
             local_path = resolve_model_path(_MODEL_NAME)
+            device = resolve_device("auto").device
             loop = asyncio.get_event_loop()
             self._model = await loop.run_in_executor(
-                None, lambda: SentenceTransformer(local_path)
+                None, lambda: SentenceTransformer(local_path, device=device)
             )
             logger.info("embedding_model_loaded", model=_MODEL_NAME, path=local_path)
         except Exception as exc:
@@ -51,9 +53,10 @@ class VectorSimilarityLayer(BaseDetector):
                 new_model_name = cfg.get("model_name", _MODEL_NAME)
                 if new_model_name and new_model_name != self._current_model_name:
                     local_path = resolve_model_path(new_model_name)
+                    device = resolve_device("auto").device
                     loop = asyncio.get_event_loop()
                     self._model = await loop.run_in_executor(
-                        None, lambda: SentenceTransformer(local_path)
+                        None, lambda: SentenceTransformer(local_path, device=device)
                     )
                     self._current_model_name = new_model_name
                     logger.info("layer3_model_reloaded", model=new_model_name, path=local_path)

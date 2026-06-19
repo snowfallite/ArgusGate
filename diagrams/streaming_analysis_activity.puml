@@ -1,0 +1,67 @@
+@startuml streaming_analysis_activity
+
+skinparam monochrome true
+skinparam shadowing false
+skinparam backgroundColor #FFFFFF
+skinparam roundCorner 0
+skinparam ArrowColor #000000
+skinparam defaultTextAlignment center
+skinparam ConditionEndStyle hline
+skinparam swimlaneTitleFontStyle bold
+scale max 1280 width
+
+title Диаграмма активности — потоковый анализ запроса и ответа
+
+|Клиент|
+start
+:Запрос\nPOST /v1/chat/completions;
+
+|Шлюз|
+:Проверка ключа\nклиентского приложения;
+:Анализ входа — Слои 1–5\n(нормализация, сигнатуры, векторы,\nML-классификатор, анализ сессии);
+if (Вердикт слоёв 1–5?) then (блокировать)
+  :Ответ «Request blocked»;
+  |Клиент|
+  :Получает блокировку;
+  stop
+else (пропустить)
+endif
+
+|Шлюз|
+:Вшить невидимую «канарейку»\nв системную инструкцию (Слой 6);
+
+|LLM|
+:Открыть SSE-поток,\nначать стрим ответа;
+
+|Шлюз|
+while (Есть следующий chunk?) is (да)
+  |LLM|
+  :Отдаёт chunk;
+  |Шлюз|
+  :Накопить текст ответа;
+  :Проверки Слоя 6:\nканарейка · refusal · surrender\nPII · эксфильтрация;
+  if (Угроза в ответе?) then (да)
+    :Кадр «content_filter» + [DONE],\nобрыв потока;
+    |Клиент|
+    :Получает блокировку ответа;
+    stop
+  else (нет)
+    |Клиент|
+    :Получает chunk;
+    |Шлюз|
+  endif
+endwhile (нет, [DONE])
+
+:Передать [DONE] клиенту;
+|Клиент|
+:Стрим завершён штатно;
+
+|Шлюз|
+fork
+  :Запись в журнал\n(request_logs + detection_events);
+fork again
+  :Пост-анализ (асинхронно):\nPresidio по полному ответу,\nfinalize Слоя 5 — эмбеддинг и\n3-граммы → сессия в Redis;
+end fork
+stop
+
+@enduml

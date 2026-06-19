@@ -1,0 +1,53 @@
+@startuml training_loop_sequence_slide
+' Компактная версия для слайда презентации (16:9)
+' Цикл дообучения LoRA-адаптера слоя 4 — ArgusGate (§2.2.13 диплома, §5 ТЗ)
+' Только чёрный и белый
+skinparam monochrome true
+skinparam shadowing false
+skinparam backgroundColor #FFFFFF
+skinparam sequenceMessageAlign center
+skinparam maxMessageSize 220
+scale max 1280 width
+
+title Цикл дообучения LoRA-адаптера
+
+actor "Администратор" as Admin
+participant "Dashboard" as UI
+participant "API\n(FastAPI)" as API
+database "PostgreSQL" as DB
+participant "Фоновая задача\n(LoRA-тренер)" as Trainer
+participant "Слой 4\n(ML-классификатор)" as L4
+
+== Разметка событий ==
+Admin -> UI : Разметить события аудита\n(атака / ложное срабатывание)
+UI -> API : Сохранить метки
+API -> DB : Записать метки
+
+== Сбор датасета ==
+Admin -> UI : Собрать датасет
+UI -> API : Создать датасет
+API -> DB : Стратифицированное разбиение\ntrain / val / test
+API --> Admin : Датасет готов
+
+== Обучение LoRA-адаптера ==
+Admin -> UI : Запустить обучение\n(ранг 16, α 32)
+UI -> API : Создать задачу
+API ->> Trainer : Фоновая задача
+activate Trainer
+loop по эпохам
+  Trainer -> DB : Метрики эпохи (P/R/F1) + прогресс
+  Trainer -->> Admin : Живой прогресс (SSE)
+end
+Trainer -> Trainer : Оценка на тестовой выборке
+Trainer -> DB : Адаптер + P/R/F1, статус «завершено»
+Trainer -->> Admin : Итог: Precision / Recall / F1
+deactivate Trainer
+
+== Активация без перезапуска ==
+Admin -> UI : Активировать адаптер
+UI -> API : Активировать слой 4
+API -> L4 : Горячая перезагрузка адаптера
+note right of L4 : без остановки сервиса
+L4 --> Admin : Адаптер активен в слое 4
+
+@enduml

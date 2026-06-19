@@ -17,6 +17,8 @@ from qdrant_client import AsyncQdrantClient
 from qdrant_client.models import Distance, PointStruct, VectorParams
 from sentence_transformers import SentenceTransformer
 
+from app.services.device_resolver import resolve as resolve_device
+
 QDRANT_HOST = os.getenv("QDRANT_HOST", "qdrant")
 QDRANT_PORT = int(os.getenv("QDRANT_PORT", "6333"))
 COLLECTION = os.getenv("QDRANT_COLLECTION", "attack_signatures")
@@ -28,7 +30,7 @@ BATCH_SIZE = 32
 
 async def main() -> None:
     print(f"Loading model {MODEL_NAME}...")
-    model = SentenceTransformer(MODEL_NAME)
+    model = SentenceTransformer(MODEL_NAME, device=resolve_device("auto").device)
 
     print(f"Connecting to Qdrant {QDRANT_HOST}:{QDRANT_PORT}...")
     qdrant = AsyncQdrantClient(host=QDRANT_HOST, port=QDRANT_PORT)

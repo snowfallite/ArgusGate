@@ -1,0 +1,91 @@
+@startuml training_loop_sequence
+' Диаграмма последовательности: цикл дообучения LoRA-адаптера слоя 4
+' Контур дообучения ArgusGate (§2.2.13 диплома, §5 ТЗ)
+' Палитра — только чёрный и белый (без цветов)
+skinparam monochrome true
+skinparam shadowing false
+skinparam backgroundColor #FFFFFF
+skinparam sequenceMessageAlign center
+skinparam maxMessageSize 240
+skinparam ParticipantPadding 12
+skinparam BoxPadding 8
+
+title Диаграмма последовательности — цикл дообучения LoRA-адаптера
+
+actor "Администратор" as Admin
+participant "Панель управления\n(Dashboard)" as UI
+participant "API\n(FastAPI)" as API
+database "PostgreSQL" as DB
+participant "Фоновая задача\n(LoRA-тренер)" as Trainer
+participant "Слой 4\n(ML-классификатор)" as L4
+
+note over Admin : В MVP роли аналитика\nи администратора совмещены
+
+== Разметка событий в журнале аудита ==
+Admin -> UI : Открыть журнал аудита
+UI -> API : Запросить события детекции
+API -> DB : Выбрать события
+DB --> API : Список событий
+API --> UI : События
+UI --> Admin : Таблица событий
+Admin -> UI : Разметить события\n(атака / ложное срабатывание)
+UI -> API : Сохранить метки
+API -> DB : Записать метки событий
+API --> UI : Сохранено
+UI --> Admin : Метки применены
+
+== Сбор датасета из размеченных событий ==
+Admin -> UI : Собрать датасет из размеченных событий
+UI -> API : Создать датасет
+API -> API : Стратифицированное разбиение\nна train / val / test (по метке)
+API -> DB : Сохранить датасет и образцы
+DB --> API : Датасет создан
+API --> UI : Датасет готов
+UI --> Admin : Датасет создан
+
+== Запуск обучения LoRA-адаптера ==
+Admin -> UI : Запустить обучение\n(LoRA: ранг 16, α 32, эпохи, learning rate)
+UI -> API : Создать задачу обучения
+API -> DB : Задача обучения (статус «в очереди»)
+API ->> Trainer : Запустить фоновую задачу
+API --> UI : Задача принята
+UI -> API : Подписаться на прогресс обучения (SSE)
+UI --> Admin : Открыт монитор обучения
+
+activate Trainer
+Trainer -> DB : Статус «выполняется», прогресс = 0
+
+loop по эпохам
+  Trainer -> Trainer : Обучение адаптера\n(проекции query / value)
+  Trainer -> DB : Метрики эпохи (loss, Precision, Recall, F1)
+  Trainer -> DB : Обновить процент прогресса
+  Trainer -->> UI : Прогресс и метрики эпохи (SSE)
+  UI -->> Admin : Живой прогресс обучения
+end
+
+== Оценка и сохранение результата ==
+Trainer -> Trainer : Финальная оценка\nна тестовой выборке
+note right of Trainer : Precision / Recall / F1\nна отложенной test-выборке
+Trainer -> Trainer : Сохранить адаптер на диск\n(валидация пути)
+Trainer -> DB : Адаптер + метрики P/R/F1,\nстатус «завершено» (100%)
+Trainer -->> UI : Итог: F1 / Precision / Recall (SSE)
+deactivate Trainer
+UI --> Admin : Обучение завершено,\nметрики Precision / Recall / F1
+
+== Активация адаптера без перезапуска сервиса ==
+Admin -> UI : Выбрать адаптер → «Активировать»
+UI -> API : Активировать адаптер слоя 4
+API -> DB : Снять активность с прежнего,\nновый адаптер — активный
+API -> L4 : Горячая перезагрузка адаптера
+note right of L4 : Подмена адаптера на лету —\nбез остановки шлюза
+L4 --> API : Адаптер загружен
+API --> UI : Адаптер активирован
+UI --> Admin : Новый адаптер работает в слое 4
+
+note over Admin, L4
+  Контур замкнут: размеченные администратором атаки превращаются
+  в новый адаптер слоя 4 — система учится на атаках,
+  которые сама же и поймала.
+end note
+
+@enduml
