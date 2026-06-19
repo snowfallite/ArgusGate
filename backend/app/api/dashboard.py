@@ -41,7 +41,7 @@ async def get_overview(
         select(func.count()).where(*time_cond, RequestLog.final_verdict.in_(["block", "blocked"]))
     )
     suspicious = await db.scalar(
-        select(func.count()).where(*time_cond, RequestLog.final_verdict == "suspicious")
+        select(func.count()).where(*time_cond, RequestLog.final_verdict.in_(["suspicious", "escalate"]))
     )
     avg_lat = await db.scalar(
         select(func.avg(RequestLog.total_latency_ms)).where(*time_cond)
@@ -80,7 +80,7 @@ async def get_timeline(
                 date_trunc('{bucket}', timestamp) AS bucket_ts,
                 COUNT(*) AS total,
                 COUNT(*) FILTER (WHERE final_verdict IN ('block','blocked')) AS blocked,
-                COUNT(*) FILTER (WHERE final_verdict = 'suspicious') AS suspicious
+                COUNT(*) FILTER (WHERE final_verdict IN ('suspicious','escalate')) AS suspicious
             FROM request_logs
             {where_clause}
             GROUP BY bucket_ts
